@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A5 영단어 체크 메모지</title>
+  <style>
+    :root {
+      --ink: #232522;
+      --text: #2e312d;
+      --line-strong: #2a2d2a;
+      --line: #7f847d;
+      --line-soft: #b5bbb3;
+      --word-bg: #eef2e5;
+      --box-bg: #f6f8f1;
+      --focus-bg: rgba(244, 230, 152, 0.22);
+      --page-w: 148mm;
+      --page-h: 210mm;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: #eceeea;
+      color: var(--text);
+      font-family: Arial, "Helvetica Neue", "Noto Sans KR", sans-serif;
+    }
+
+    body {
+      padding: 20px 12px 28px;
+    }
+
+
+    .paste-help {
+      width: min(100%, 148mm);
+      margin: 0 auto 8px;
+      color: #666d64;
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: right;
+    }
+
+    .paste-help strong {
+      color: #59664c;
+      font-weight: 700;
+    }
+
+    .toolbar {
+      width: min(100%, 148mm);
+      margin: 0 auto 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar button {
+      appearance: none;
+      min-width: 82px;
+      border: 0.22mm solid var(--line-soft);
+      border-top: 0.65mm solid var(--line-strong);
+      border-radius: 0;
+      background: var(--box-bg);
+      color: var(--ink);
+      height: 34px;
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 700;
+      font-family: inherit;
+      letter-spacing: 0.025em;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+
+    .toolbar button:hover {
+      background: var(--word-bg);
+    }
+
+    .toolbar button:active {
+      transform: translateY(1px);
+    }
+
+    .toolbar button:focus-visible {
+      outline: 2px solid #81906c;
+      outline-offset: 2px;
+    }
+
+    .sheet {
+      width: var(--page-w);
+      height: var(--page-h);
+      min-height: var(--page-h);
+      margin: 0 auto;
+      background: #fff;
+      padding: 10mm 7mm;
+      box-shadow: 0 5px 18px rgba(0, 0, 0, 0.10);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 23mm;
+      gap: 0;
+      margin-bottom: 4mm;
+      border-top: 0.72mm solid var(--line-strong);
+      border-bottom: 0.19mm solid var(--line-soft);
+      background: var(--box-bg);
+    }
+
+    .meta-field {
+      min-height: 13mm;
+      border: 0;
+      border-right: 0.22mm solid var(--line-soft);
+      background: var(--box-bg);
+      position: relative;
+      display: grid;
+      grid-template-rows: 5mm 1fr;
+    }
+
+    .meta-field:last-child {
+      border-right: 0;
+    }
+
+    .meta-label {
+      display: flex;
+      align-items: center;
+      padding: 0 2mm;
+      font-weight: 700;
+      font-size: 7.4pt;
+      color: var(--ink);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .meta-input {
+      width: 100%;
+      height: 4.8mm;
+      align-self: center;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 0 2mm;
+      font-size: 9.3pt;
+      line-height: normal;
+      font-family: inherit;
+    }
+
+    .table-wrap {
+      flex: 1;
+      min-height: 0;
+      border-top: 0.72mm solid var(--line-strong);
+      border-bottom: 0.72mm solid var(--line-strong);
+    }
+
+    table {
+      width: 100%;
+      height: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    col.no { width: 9mm; }
+    col.check { width: 5.8mm; }
+    col.word { width: 36mm; }
+    col.meaning { width: auto; }
+
+    thead th,
+    tbody td {
+      border-right: 0.22mm solid var(--line-soft);
+      border-bottom: 0.19mm solid var(--line-soft);
+      padding: 0;
+      vertical-align: middle;
+    }
+
+    thead th:last-child,
+    tbody td:last-child {
+      border-right: 0;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    thead {
+      height: 7.4mm;
+    }
+
+    thead th {
+      height: 7.4mm;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 7.2pt;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    thead .word-head {
+      background: var(--word-bg);
+    }
+
+    tbody {
+      height: calc(100% - 7.4mm);
+    }
+
+    tbody tr {
+      height: 4%;
+    }
+
+    tbody td {
+      height: 4%;
+      text-align: center;
+    }
+
+    .no-input,
+    .cell-input {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .no-input,
+    .cell-input {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      height: 4.8mm;
+      line-height: normal;
+    }
+
+    .no-input {
+      text-align: center;
+      padding: 0;
+      font-size: 8.4pt;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+
+    .cell-input {
+      text-align: left;
+      padding: 0 2mm;
+      font-size: 8.9pt;
+    }
+
+    td.word-cell {
+      background: var(--word-bg);
+    }
+
+
+    tbody td {
+      position: relative;
+    }
+
+    tbody td.range-selected::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(114, 132, 92, 0.15);
+      outline: 0.35mm solid rgba(114, 132, 92, 0.72);
+      outline-offset: -0.35mm;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    tbody.selecting,
+    tbody.selecting input {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .check-cell {
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+
+
+    .check-box {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      position: relative;
+      z-index: 1;
+      font-size: 9.6pt;
+      line-height: 1;
+      color: #72845c;
+      font-weight: 700;
+    }
+
+    .check-cell.checked .check-box::before {
+      content: "✓";
+      position: relative;
+      top: -0.1mm;
+    }
+
+    .check-cell:focus-visible {
+      outline: 0.35mm solid #3b3f3a;
+      outline-offset: -0.35mm;
+    }
+
+    .meta-input:focus,
+    .no-input:focus,
+    .cell-input:focus {
+      background: var(--focus-bg);
+    }
+
+    .sheet::after {
+      content: "";
+      display: block;
+      height: 0;
+      border-bottom: 0;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 12px 0 20px;
+        overflow-x: auto;
+      }
+
+  
+    .paste-help {
+      width: min(100%, 148mm);
+      margin: 0 auto 8px;
+      color: #666d64;
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: right;
+    }
+
+    .paste-help strong {
+      color: #59664c;
+      font-weight: 700;
+    }
+
+    .toolbar {
+        width: var(--page-w);
+        padding: 0 10px;
+      }
+
+      .sheet {
+        box-shadow: none;
+      }
+    }
+
+    @page {
+      size: A5 portrait;
+      margin: 0;
+    }
+
+    @media print {
+      html,
+      body {
+        width: 148mm;
+        height: 210mm;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+      }
+
+  
+    .paste-help {
+      width: min(100%, 148mm);
+      margin: 0 auto 8px;
+      color: #666d64;
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: right;
+    }
+
+    .paste-help strong {
+      color: #59664c;
+      font-weight: 700;
+    }
+
+    .toolbar {
+        display: none !important;
+      }
+
+      .sheet {
+        width: 148mm;
+        min-height: 210mm;
+        height: 210mm;
+        margin: 0;
+        padding: 10mm 7mm;
+        box-shadow: none;
+      }
+
+      input,
+      .word-cell,
+      .word-head,
+      .meta-field {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button type="button" id="clearBtn">전체 초기화</button>
+    <button type="button" id="printBtn">인쇄하기</button>
+  </div>
+
+  <div class="paste-help">
+    WORD 또는 MEANING 칸에 <strong>여러 줄을 붙여넣으면</strong> 영어와 뜻이 자동 분리됩니다.
+  </div>
+
+  <main class="sheet" aria-label="A5 영단어 체크 메모지">
+    <section class="meta" aria-label="상단 정보">
+      <label class="meta-field">
+        <span class="meta-label">SUBJECT / TITLE.</span>
+        <input class="meta-input" id="subjectInput" type="text" autocomplete="off" />
+      </label>
+
+      <label class="meta-field">
+        <span class="meta-label">PAGE No.</span>
+        <input class="meta-input" id="pageInput" type="text" autocomplete="off" />
+      </label>
+    </section>
+
+    <section class="table-wrap">
+      <table aria-label="영단어 체크 테이블">
+        <colgroup>
+          <col class="no" />
+          <col class="check" />
+          <col class="check" />
+          <col class="check" />
+          <col class="word" />
+          <col class="meaning" />
+        </colgroup>
+
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th colspan="3">CHECK.</th>
+            <th class="word-head">WORD.</th>
+            <th>MEANING.</th>
+          </tr>
+        </thead>
+
+        <tbody id="memoBody"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const ROW_COUNT = 25;
+      const STORAGE_KEY = "a5-vocab-check-note-v2";
+
+      const body = document.getElementById("memoBody");
+      const subjectInput = document.getElementById("subjectInput");
+      const pageInput = document.getElementById("pageInput");
+      const clearBtn = document.getElementById("clearBtn");
+      const printBtn = document.getElementById("printBtn");
+
+      function makeRow(index) {
+        const tr = document.createElement("tr");
+
+        const noTd = document.createElement("td");
+        const noInput = document.createElement("input");
+        noInput.type = "text";
+        noInput.inputMode = "numeric";
+        noInput.className = "no-input";
+        noInput.dataset.row = index;
+        noInput.setAttribute("aria-label", `${index + 1}번째 번호`);
+        noTd.appendChild(noInput);
+        tr.appendChild(noTd);
+
+        for (let i = 0; i < 3; i++) {
+          const checkTd = document.createElement("td");
+          checkTd.className = "check-cell";
+          checkTd.tabIndex = 0;
+          checkTd.dataset.row = index;
+          checkTd.dataset.check = i;
+          checkTd.setAttribute("role", "checkbox");
+          checkTd.setAttribute("aria-checked", "false");
+          checkTd.setAttribute("aria-label", `${index + 1}번째 단어 ${i + 1}차 미암기 체크`);
+
+          const mark = document.createElement("span");
+          mark.className = "check-box";
+          checkTd.appendChild(mark);
+          tr.appendChild(checkTd);
+        }
+
+        const wordTd = document.createElement("td");
+        wordTd.className = "word-cell";
+        const wordInput = document.createElement("input");
+        wordInput.type = "text";
+        wordInput.className = "cell-input word-input";
+        wordInput.dataset.row = index;
+        wordInput.setAttribute("aria-label", `${index + 1}번째 영단어`);
+        wordTd.appendChild(wordInput);
+        tr.appendChild(wordTd);
+
+        const meaningTd = document.createElement("td");
+        const meaningInput = document.createElement("input");
+        meaningInput.type = "text";
+        meaningInput.className = "cell-input meaning-input";
+        meaningInput.dataset.row = index;
+        meaningInput.setAttribute("aria-label", `${index + 1}번째 뜻`);
+        meaningTd.appendChild(meaningInput);
+        tr.appendChild(meaningTd);
+
+        return tr;
+      }
+
+      for (let i = 0; i < ROW_COUNT; i++) {
+        body.appendChild(makeRow(i));
+      }
+
+      const noInputs = [...document.querySelectorAll(".no-input")];
+      const wordInputs = [...document.querySelectorAll(".word-input")];
+      const meaningInputs = [...document.querySelectorAll(".meaning-input")];
+      const checkCells = [...document.querySelectorAll(".check-cell")];
+      const tableCells = [...body.querySelectorAll("td")];
+
+      const BASE_WORD_FONT_PT = 8.9;
+      const MIN_WORD_FONT_PT = 6.2;
+      const FONT_STEP_PT = 0.2;
+
+      function autoFitInput(input) {
+        if (!input) return;
+
+        input.style.fontSize = `${BASE_WORD_FONT_PT}pt`;
+
+        while (
+          input.scrollWidth > input.clientWidth &&
+          parseFloat(input.style.fontSize) > MIN_WORD_FONT_PT
+        ) {
+          const nextSize = Math.max(
+            MIN_WORD_FONT_PT,
+            parseFloat(input.style.fontSize) - FONT_STEP_PT
+          );
+          input.style.fontSize = `${nextSize}pt`;
+
+          if (nextSize <= MIN_WORD_FONT_PT) break;
+        }
+      }
+
+      function autoFitAllTextInputs() {
+        [...wordInputs, ...meaningInputs].forEach(autoFitInput);
+      }
+
+      function containsKorean(value) {
+        return /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(value);
+      }
+
+      function looksLikeEnglish(value) {
+        return /[A-Za-z]/.test(value) && !containsKorean(value);
+      }
+
+      function cleanPastedLine(line) {
+        return line
+          .replace(/\u00a0/g, " ")
+          .replace(/^[•·▪■◆▶►※\-\s]+/, "")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function parseVocabularyText(rawText) {
+        const rawLines = rawText
+          .replace(/\r/g, "")
+          .split("\n")
+          .map(cleanPastedLine)
+          .filter(Boolean);
+
+        const entries = [];
+        let pendingWord = "";
+        let pendingMeaning = "";
+
+        function pushEntry(word, meaning) {
+          word = cleanPastedLine(word);
+          meaning = cleanPastedLine(meaning);
+
+          if (!word || !meaning) return;
+          if (!/[A-Za-z]/.test(word)) return;
+          if (!containsKorean(meaning)) return;
+
+          entries.push({ word, meaning });
+        }
+
+        for (const line of rawLines) {
+          if (/^(LOGIC TREE|VOCABULARY|CHAPTER|POINT|\-\s*\d+\s*\-?)$/i.test(line)) {
+            continue;
+          }
+
+          // 가장 일반적인 형식: word: 뜻
+          const colonIndex = line.search(/[:：]/);
+          if (colonIndex > 0) {
+            const left = line.slice(0, colonIndex).trim();
+            const right = line.slice(colonIndex + 1).trim();
+
+            if (/[A-Za-z]/.test(left) && containsKorean(right)) {
+              pushEntry(left, right);
+              pendingWord = "";
+              pendingMeaning = "";
+              continue;
+            }
+          }
+
+          // 탭 또는 넓은 공백으로 나뉜 두 열 형식
+          const tabParts = line.split(/\t+|\s{2,}/).map(part => part.trim()).filter(Boolean);
+          if (tabParts.length >= 2) {
+            const koreanStart = tabParts.findIndex(containsKorean);
+            if (koreanStart > 0) {
+              pushEntry(
+                tabParts.slice(0, koreanStart).join(" "),
+                tabParts.slice(koreanStart).join(" ")
+              );
+              pendingWord = "";
+              pendingMeaning = "";
+              continue;
+            }
+          }
+
+          // PDF 복사 과정에서 뜻이 다음 줄로 내려간 경우
+          if (looksLikeEnglish(line)) {
+            if (pendingWord && pendingMeaning) {
+              pushEntry(pendingWord, pendingMeaning);
+            }
+            pendingWord = line;
+            pendingMeaning = "";
+            continue;
+          }
+
+          if (containsKorean(line) && pendingWord) {
+            pendingMeaning = pendingMeaning
+              ? `${pendingMeaning} ${line}`
+              : line;
+            pushEntry(pendingWord, pendingMeaning);
+            pendingWord = "";
+            pendingMeaning = "";
+          }
+        }
+
+        if (pendingWord && pendingMeaning) {
+          pushEntry(pendingWord, pendingMeaning);
+        }
+
+        return entries;
+      }
+
+      function fillVocabularyEntries(entries, startRow) {
+        if (!entries.length) return false;
+
+        let row = Math.max(0, Math.min(ROW_COUNT - 1, startRow));
+
+        for (const entry of entries) {
+          if (row >= ROW_COUNT) break;
+
+          wordInputs[row].value = entry.word;
+          meaningInputs[row].value = entry.meaning;
+          autoFitInput(wordInputs[row]);
+          autoFitInput(meaningInputs[row]);
+          row++;
+        }
+
+        saveData();
+        return true;
+      }
+
+      function handleVocabularyPaste(event, input) {
+        const pastedText = event.clipboardData?.getData("text/plain") ?? "";
+        if (!pastedText) return;
+
+        const entries = parseVocabularyText(pastedText);
+        const isStructuredPaste =
+          entries.length >= 1 &&
+          (pastedText.includes("\n") || pastedText.includes(":") || pastedText.includes("：") || pastedText.includes("\t"));
+
+        if (!isStructuredPaste) return;
+
+        event.preventDefault();
+        const startRow = Number(input.dataset.row) || 0;
+        fillVocabularyEntries(entries, startRow);
+      }
+
+      let dragStartCell = null;
+      let isPointerDown = false;
+      let isDraggingRange = false;
+      let startX = 0;
+      let startY = 0;
+      let selectedCells = new Set();
+
+      function clearRangeSelection() {
+        selectedCells.forEach((cell) => cell.classList.remove("range-selected"));
+        selectedCells.clear();
+      }
+
+      function cellPosition(cell) {
+        const row = cell.parentElement.rowIndex - 1;
+        const col = cell.cellIndex;
+        return { row, col };
+      }
+
+      function selectRectangle(startCell, endCell) {
+        clearRangeSelection();
+
+        const start = cellPosition(startCell);
+        const end = cellPosition(endCell);
+        const minRow = Math.min(start.row, end.row);
+        const maxRow = Math.max(start.row, end.row);
+        const minCol = Math.min(start.col, end.col);
+        const maxCol = Math.max(start.col, end.col);
+
+        [...body.rows].forEach((row, rowIndex) => {
+          [...row.cells].forEach((cell, colIndex) => {
+            if (
+              rowIndex >= minRow &&
+              rowIndex <= maxRow &&
+              colIndex >= minCol &&
+              colIndex <= maxCol
+            ) {
+              cell.classList.add("range-selected");
+              selectedCells.add(cell);
+            }
+          });
+        });
+      }
+
+      function clearSelectedContents() {
+        if (selectedCells.size === 0) return false;
+
+        let firstNoWasCleared = false;
+
+        selectedCells.forEach((cell) => {
+          const input = cell.querySelector("input");
+
+          if (cell.classList.contains("check-cell")) {
+            cell.classList.remove("checked");
+            cell.setAttribute("aria-checked", "false");
+          } else if (input) {
+            input.value = "";
+            if (input === noInputs[0]) firstNoWasCleared = true;
+          }
+        });
+
+        if (firstNoWasCleared) {
+          noInputs.forEach((input) => input.value = "");
+        }
+
+        selectedCells.forEach((cell) => {
+          const input = cell.querySelector(".word-input, .meaning-input");
+          if (input) autoFitInput(input);
+        });
+
+        saveData();
+        return true;
+      }
+
+      tableCells.forEach((cell) => {
+        cell.addEventListener("mousedown", (event) => {
+          if (event.button !== 0) return;
+
+          dragStartCell = cell;
+          isPointerDown = true;
+          isDraggingRange = false;
+          startX = event.clientX;
+          startY = event.clientY;
+        });
+
+        cell.addEventListener("mouseenter", () => {
+          if (!isPointerDown || !dragStartCell) return;
+
+          isDraggingRange = true;
+          body.classList.add("selecting");
+          document.activeElement?.blur();
+          window.getSelection?.().removeAllRanges();
+          selectRectangle(dragStartCell, cell);
+        });
+      });
+
+      document.addEventListener("mousemove", (event) => {
+        if (!isPointerDown || !dragStartCell || isDraggingRange) return;
+
+        const distance = Math.hypot(event.clientX - startX, event.clientY - startY);
+        if (distance > 5) {
+          isDraggingRange = true;
+          body.classList.add("selecting");
+          document.activeElement?.blur();
+          window.getSelection?.().removeAllRanges();
+          selectRectangle(dragStartCell, dragStartCell);
+        }
+      });
+
+      document.addEventListener("mouseup", () => {
+        isPointerDown = false;
+        dragStartCell = null;
+        body.classList.remove("selecting");
+
+        setTimeout(() => {
+          isDraggingRange = false;
+        }, 0);
+      });
+
+      document.addEventListener("mousedown", (event) => {
+        if (!event.target.closest("#memoBody")) {
+          clearRangeSelection();
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Backspace" && event.key !== "Delete") return;
+        if (selectedCells.size === 0) return;
+
+        event.preventDefault();
+        clearSelectedContents();
+      });
+
+      function fillNumbersFromFirst() {
+        const value = noInputs[0].value.trim();
+
+        if (value === "") {
+          noInputs.forEach((input, index) => {
+            if (index > 0) input.value = "";
+          });
+          saveData();
+          return;
+        }
+
+        const start = Number(value);
+        if (!Number.isInteger(start)) return;
+
+        noInputs.forEach((input, index) => {
+          input.value = String(start + index);
+        });
+
+        saveData();
+      }
+
+      function toggleCheck(cell) {
+        const isChecked = cell.classList.toggle("checked");
+        cell.setAttribute("aria-checked", String(isChecked));
+        saveData();
+      }
+
+      checkCells.forEach((cell) => {
+        cell.addEventListener("click", () => {
+          if (isDraggingRange || selectedCells.size > 1) return;
+          toggleCheck(cell);
+        });
+        cell.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggleCheck(cell);
+          }
+        });
+      });
+
+      noInputs[0].addEventListener("input", fillNumbersFromFirst);
+
+      [
+        subjectInput,
+        pageInput
+      ].forEach((input) => {
+        input.addEventListener("input", saveData);
+      });
+
+      [...wordInputs, ...meaningInputs].forEach((input) => {
+        input.addEventListener("input", () => {
+          autoFitInput(input);
+          saveData();
+        });
+
+        input.addEventListener("paste", (event) => {
+          handleVocabularyPaste(event, input);
+        });
+      });
+
+      function getData() {
+        return {
+          subject: subjectInput.value,
+          page: pageInput.value,
+          startNo: noInputs[0].value,
+          numbers: noInputs.map((input) => input.value),
+          words: wordInputs.map((input) => input.value),
+          meanings: meaningInputs.map((input) => input.value),
+          checks: checkCells.map((cell) => cell.classList.contains("checked"))
+        };
+      }
+
+      function saveData() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(getData()));
+        } catch (error) {
+          console.warn("자동 저장에 실패했습니다.", error);
+        }
+      }
+
+      function loadData() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+
+          const data = JSON.parse(raw);
+
+          subjectInput.value = data.subject ?? "";
+          pageInput.value = data.page ?? "";
+          if (Array.isArray(data.numbers)) {
+            noInputs.forEach((input, index) => {
+              input.value = data.numbers[index] ?? "";
+            });
+          } else {
+            noInputs[0].value = data.startNo ?? "";
+            if (noInputs[0].value !== "") fillNumbersFromFirst();
+          }
+
+          wordInputs.forEach((input, index) => {
+            input.value = data.words?.[index] ?? "";
+          });
+
+          meaningInputs.forEach((input, index) => {
+            input.value = data.meanings?.[index] ?? "";
+          });
+
+          checkCells.forEach((cell, index) => {
+            const checked = Boolean(data.checks?.[index]);
+            cell.classList.toggle("checked", checked);
+            cell.setAttribute("aria-checked", String(checked));
+          });
+
+          requestAnimationFrame(autoFitAllTextInputs);
+        } catch (error) {
+          console.warn("저장된 내용을 불러오지 못했습니다.", error);
+        }
+      }
+
+      clearBtn.addEventListener("click", () => {
+        const confirmed = window.confirm("입력한 내용과 체크 표시를 모두 지울까요?");
+        if (!confirmed) return;
+
+        subjectInput.value = "";
+        pageInput.value = "";
+        noInputs.forEach((input) => input.value = "");
+        wordInputs.forEach((input) => input.value = "");
+        meaningInputs.forEach((input) => input.value = "");
+        checkCells.forEach((cell) => {
+          cell.classList.remove("checked");
+          cell.setAttribute("aria-checked", "false");
+        });
+
+        autoFitAllTextInputs();
+        clearRangeSelection();
+        localStorage.removeItem(STORAGE_KEY);
+        noInputs[0].focus();
+      });
+
+      printBtn.addEventListener("click", () => window.print());
+      window.addEventListener("resize", autoFitAllTextInputs);
+
+      loadData();
+    })();
+  </script>
+</body>
+</html>
